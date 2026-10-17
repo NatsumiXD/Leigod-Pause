@@ -79,7 +79,11 @@ cargo build --offline --release --target-dir target/launcher
 - `LeiGodLauncher-portable-windows-x64.zip`：完整便携应用，包含私有 Node/Frida 和许可文件。
 - `SHA256SUMS.txt`：便携 ZIP 的 SHA256 校验值。
 
-构建产物保留 30 天。发布包使用全新默认配置，不收集本机历史日志；`dist`、`target`、`node_modules` 已加入 Git 忽略。工作流上传 Actions 构建产物；不会自动创建 GitHub Release。
+构建产物保留 30 天。发布包使用全新默认配置，不收集本机历史日志；`dist`、`target`、`node_modules` 已加入 Git 忽略。
+
+推送到 `main`，或在 `main` 手动运行工作流，全部构建步骤成功后还会自动发布 [GitHub Pre-release](https://github.com/NatsumiXD/Leigod-Pause/releases)，附上同一份便携 ZIP 和 SHA256 校验文件。其他分支和 Pull Request 只构建，不发布。预发布标签为 `pre-运行编号.重跑次数`（例如 `pre-12.1`），对应本次构建的提交；不会覆盖已有版本或将预发布设为正式 Latest。
+
+发布使用独立作业和 GitHub 自带的 `GITHUB_TOKEN`，仅该作业具有 `contents: write` 权限，无需新增 Secret。它先校验下载产物的 SHA256，再建立草稿、上传两个附件，最后公开为预发布；上传失败时保持草稿。仓库或组织策略需要允许工作流写入仓库内容。
 
 在本机复用相同打包步骤（PowerShell 7，输出目录必须为空或不存在）：
 
