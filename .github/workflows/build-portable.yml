@@ -1,0 +1,86 @@
+name: Build Windows portable
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portable-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: '0'
+  RUST_VERSION: '1.99.0'
+  NODE_VERSION: '24.18.0'
+  BUILD_TARGET: x86_64-pc-windows-msvc
+
+jobs:
+  portable:
+    name: Windows x64 portable
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pinned Node runtime
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          architecture: x64
+          cache: npm
+          cache-dependency-path: ci/runtime/package-lock.json
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install $env:RUST_VERSION --profile minimal --component rustfmt --component clippy --target $env:BUILD_TARGET
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup override set $env:RUST_VERSION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Test Rust
+        run: cargo test --locked --target $env:BUILD_TARGET --target-dir target/ci
+
+      - name: Check Rust warnings
+        run: cargo clippy --locked --all-targets --target $env:BUILD_TARGET --target-dir target/ci -- -D warnings
+
+      - name: Test JavaScript observers
+        run: node --test tests/*.test.cjs
+
+      - name: Install locked Frida runtime
+        run: npm ci --prefix ci/runtime --omit=dev --no-audit --no-fund
+
+      - name: Build release executable
+        run: cargo build --locked --release --target $env:BUILD_TARGET --target-dir target/ci
+
+      - name: Assemble and verify portable ZIP
+        run: |
+          ./scripts/create-portable.ps1 `
+            -Executable "target/ci/$env:BUILD_TARGET/release/leigod-status.exe" `
+            -NodeExecutable (Get-Command node.exe).Source `
+            -FridaDirectory ci/runtime/node_modules/frida `
+            -OutputDirectory dist/ci
+
+      - name: Upload portable package
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: LeiGodLauncher-windows-x64-${{ github.run_number }}
+          path: |
+            dist/ci/LeiGodLauncher-portable-windows-x64.zip
+            dist/ci/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30

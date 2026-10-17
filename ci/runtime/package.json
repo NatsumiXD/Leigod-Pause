@@ -1,0 +1,15 @@
+{
+  "name": "leigod-portable-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned runtime dependencies for the portable Windows package",
+  "engines": {
+    "node": "24.18.0"
+  },
+  "dependencies": {
+    "frida": "17.23.2"
+  },
+  "allowScripts": {
+    "frida@17.23.2": true
+  }
+}

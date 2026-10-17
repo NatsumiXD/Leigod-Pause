@@ -1,0 +1,12 @@
+* text=auto eol=lf
+*.rs text eol=lf
+*.toml text eol=lf
+*.lock text eol=lf
+*.js text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.ps1 text eol=lf
+# Preserve upstream license text, including its original indentation.
+licenses/* -whitespace

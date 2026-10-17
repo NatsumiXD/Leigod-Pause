@@ -1,0 +1,24 @@
+# Build output and bundled runtimes
+/target/
+/.runtime/
+/dist/
+**/node_modules/
+
+# Local settings and account/session logs
+/config.json
+/logs/
+*.log
+*.ndjson
+.env
+.env.*
+!.env.example
+
+# Local editor state and Windows crash/debug files
+/.vs/
+/.vscode/
+*.pdb
+*.dmp
+*.tmp
+*.bak
+Thumbs.db
+Desktop.ini
