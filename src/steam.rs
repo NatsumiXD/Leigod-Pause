@@ -646,10 +646,14 @@ mod tests {
     #[test]
     fn installed_manifest_is_not_running_until_a_matching_process_is_present() {
         let root = std::env::temp_dir().join(format!("steam-evidence-test-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        // Windows CI can expose TEMP through an 8.3 name or directory alias.
+        // manifests() resolves its install directory, so the synthetic process
+        // must use the same resolved path rather than the original TEMP spelling.
+        let root = root.canonicalize().unwrap();
         let apps = root.join("steamapps");
         let common = apps.join("common");
         let game = common.join("FixtureGame");
-        fs::create_dir(&root).unwrap();
         fs::create_dir(&apps).unwrap();
         fs::create_dir(&common).unwrap();
         fs::create_dir(&game).unwrap();
@@ -686,6 +690,8 @@ mod tests {
             ],
         );
         assert!(present.running_apps.is_empty());
+        assert_eq!(present.process_only_apps.len(), 1);
+        assert_eq!(present.process_only_apps[0].processes.len(), 1);
         assert_eq!(present.process_only_apps[0].processes[0].pid, 20);
         assert_eq!(
             present.for_game(&[3097560])["status"],
